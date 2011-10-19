@@ -1,16 +1,17 @@
 # What does it do?
 
-Converts a [Sitemap XML](http://www.sitemaps.org/) file to a [.htaccess](http://httpd.apache.org/docs/current/howto/htaccess.html) compatible file with HTTP 301 redirect rules.
+Converts a [Sitemap XML](http://www.sitemaps.org/) file to a [.htaccess](http://httpd.apache.org/docs/current/howto/htaccess.html) or [nginx](http://nginx.org/) rules file with HTTP 301 redirect rules.
 
 It's is an easy way to move all the content described in a [Sitemap XML](http://www.sitemaps.org/) file to a new location without any complex additional configuration. Using [HTTP 301 redirect](http://en.wikipedia.org/wiki/HTTP_301) is the proper way to inform users and crawler bots that a resource has moved permanently.
 
 ## Usage
 
-	sitemapMover.py --destinationDomain destionationDomain sitemapFilename htaccessTempFilename
+	sitemapMover.py --destinationDomain destionationDomain --ruleFormat ruleFormat sitemapFilename outputFilename
 
 * __--destinationDomain__ The destination domain for the URLs (eg. the.destination-domain.com)
+* __--ruleFormat__ The rule format to be used (eg. htaccess, nginx)
 * __sitemapFilename__       The Google Sitemap XML file to use as source
-* __htaccessTempFilename__  The .htaccess compatible file to be generated with HTTP 301 rules corresponding to the sitemap's URLs. _Any existing file with the same name will be overwriten!_
+* __outputFilename__  The .htaccess or nginx compatible file to be generated with HTTP 301 rules corresponding to the sitemap's URLs. _Any existing file with the same name will be overwriten!_
 
 
 ## License

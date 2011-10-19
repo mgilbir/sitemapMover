@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# sitemapMover: Converts Google Sitemap XML to .htaccess 301 redirect rules
+# sitemapMover: Converts Sitemap XML to .htaccess or nginx 301 redirect rules
 # Copyright (C) 2011 by Miguel Eduardo Gil Biraud
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -42,21 +42,52 @@ def initializeHtaccessRule():
 
 def createHtaccessRule(newBaseUrl, url):
 	urlData = urlparse(url)
-
 	escapedNetloc = urlData.netloc.replace( ".", "\\.")
 	rule = "RewriteCond %%{HTTP_HOST} ^%(netloc)s$ [NC]\n" % {"netloc": escapedNetloc}
 	rule = "RewriteCond %%{REQUEST_URI} ^%(path)s$ [NC]\n" % {"path": urlData.path}
 	rule = rule + "RewriteRule .* http://%(redirect)s [R=301,NC,L]\n" % {"redirect": newBaseUrl+urlData.path}
-
 	return rule
 
-if __name__=='__main__':
-	parser = argparse.ArgumentParser(description='Convert a sitemap.xml to a list of .htaccess HTTP 301 rules to effectively move a site to a new (sub)domain',
-		usage='%(prog)s --destinationDomain destinationDomain sitemapFilename htaccessTempFilename')
-	parser.add_argument('--destinationDomain', type=str, required=True, help="The destination domain for the URLs (eg. my.destination-domain.com)")
+def initializeNginxRule():
+	rule = "location / {\n";
+	return rule
 
+def createNginxRule(newBaseUrl, url):
+	urlData = urlparse(url)
+	escapedNetloc = urlData.netloc.replace( ".", "\\.")
+	path = urlData.path
+	if path[-1] == "/":
+		path = path[:-1] + "[/]?";
+	rule = "rewrite ^%(path)s$ %(redirect)s permanent;\n" % {"path": path, "redirect": newBaseUrl+urlData.path}
+	return rule
+
+def finalizeNginxRule():
+	rule = "}"	
+	return rule
+
+def processHtaccess(xmlData, outputFilename, destinationDomain):
+	args.outputFilename.write(initializeHtaccessRule())
+
+	for url in extractUrls(xmlData):
+		rule = createHtaccessRule(destinationDomain, url)
+		outputFilename.write(rule)
+
+def processNginx(xmlData, outputFilename, destinationDomain):
+	args.outputFilename.write(initializeNginxRule())
+
+	for url in extractUrls(xmlData):
+		rule = createNginxRule(destinationDomain, url)
+		outputFilename.write(rule)
+	
+	args.outputFilename.write(finalizeNginxRule())
+
+if __name__=='__main__':
+	parser = argparse.ArgumentParser(description='Convert a sitemap.xml to a list of .htaccess or nginx HTTP 301 rules to effectively move a site to a new (sub)domain',
+		usage='%(prog)s --destinationDomain destinationDomain --ruleFormat ruleFormat sitemapFilename outputFilename')
+	parser.add_argument('--destinationDomain', type=str, required=True, help="The destination domain for the URLs (eg. my.destination-domain.com)")
+	parser.add_argument('--ruleFormat', type=str, required=True, help="The rule format to be used (eg. htaccess, nginx)")
 	parser.add_argument('sitemapFilename', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help="The Google Sitemap XML file to use as source")
-	parser.add_argument('htaccessTempFilename', nargs='?', type=argparse.FileType('w'), help="The .htaccess compatible file to be generated with HTTP 301 rules corresponding to the sitemap's URLs")
+	parser.add_argument('outputFilename', nargs='?', type=argparse.FileType('w'), help="The .htaccess compatible file to be generated with HTTP 301 rules corresponding to the sitemap's URLs")
 
 	try:
 		args = parser.parse_args()
@@ -66,16 +97,18 @@ if __name__=='__main__':
 
 	xmlData = args.sitemapFilename.read();
 
-	args.htaccessTempFilename.write(initializeHtaccessRule())
-
 	urlList = extractUrls(xmlData)
 	totalUrlCount = len(urlList)
 
 	print "There are {0} URLs to process".format(totalUrlCount)
 
-	for url in extractUrls(xmlData):
-		rule = createHtaccessRule(args.destinationDomain, url)
-		args.htaccessTempFilename.write(rule)
+	if (args.ruleFormat=="htaccess"):
+		processHtaccess(xmlData, args.outputFilename, args.destinationDomain)
+	elif (args.ruleFormat=="nginx"):
+		processNginx(xmlData, args.outputFilename, args.destinationDomain)
+	else:
+		print "The rule format is not supported currently. Please contact the developer."
+
+	args.outputFilename.close()
 
 	args.sitemapFilename.close()
-	args.htaccessTempFilename.close()
