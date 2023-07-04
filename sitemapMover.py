@@ -2,17 +2,17 @@
 
 # sitemapMover: Converts Sitemap XML to .htaccess or nginx 301 redirect rules
 # Copyright (C) 2011 by Miguel Eduardo Gil Biraud
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,7 +24,6 @@
 from xml.dom import minidom
 import argparse
 import sys
-import math
 from urllib.parse import urlparse
 
 
@@ -37,7 +36,7 @@ def extractUrls(xmlData):
 	return urls
 
 def initializeHtaccessRule():
-	rule = "Options +FollowSymLinks \nRewriteEngine on \n"	
+	rule = "Options +FollowSymLinks \nRewriteEngine on \n"
 	return rule
 
 def createHtaccessRule(newBaseUrl, url):
@@ -49,20 +48,19 @@ def createHtaccessRule(newBaseUrl, url):
 	return rule
 
 def initializeNginxRule():
-	rule = "location / {\n";
+	rule = "location / {\n"
 	return rule
 
 def createNginxRule(newBaseUrl, url):
 	urlData = urlparse(url)
-	escapedNetloc = urlData.netloc.replace( ".", "\\.")
 	path = urlData.path
 	if path[-1] == "/":
-		path = path[:-1] + "[/]?";
+		path = path[:-1] + "[/]?"
 	rule = "rewrite ^%(path)s$ %(redirect)s permanent;\n" % {"path": path, "redirect": newBaseUrl+urlData.path}
 	return rule
 
 def finalizeNginxRule():
-	rule = "}"	
+	rule = "}"
 	return rule
 
 def processHtaccess(xmlData, outputFilename, destinationDomain):
@@ -78,7 +76,7 @@ def processNginx(xmlData, outputFilename, destinationDomain):
 	for url in extractUrls(xmlData):
 		rule = createNginxRule(destinationDomain, url)
 		outputFilename.write(rule)
-	
+
 	args.outputFilename.write(finalizeNginxRule())
 
 if __name__=='__main__':
@@ -95,17 +93,16 @@ if __name__=='__main__':
 		parser.error(str(msg))
 
 
-	xmlData = args.sitemapFilename.read();
+	sitemapData = args.sitemapFilename.read()
 
-	urlList = extractUrls(xmlData)
-	totalUrlCount = len(urlList)
+	urlList = extractUrls(sitemapData)
 
 	print(f"There are {len(urlList)} URLs to process")
 
-	if (args.ruleFormat=="htaccess"):
-		processHtaccess(xmlData, args.outputFilename, args.destinationDomain)
-	elif (args.ruleFormat=="nginx"):
-		processNginx(xmlData, args.outputFilename, args.destinationDomain)
+	if args.ruleFormat=="htaccess":
+		processHtaccess(sitemapData, args.outputFilename, args.destinationDomain)
+	elif args.ruleFormat=="nginx":
+		processNginx(sitemapData, args.outputFilename, args.destinationDomain)
 	else:
 		print("The rule format is not supported currently. Please contact the developer.")
 
