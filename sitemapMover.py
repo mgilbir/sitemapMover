@@ -25,7 +25,7 @@ from xml.dom import minidom
 import argparse
 import sys
 import math
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 
 def extractUrls(xmlData):
@@ -91,7 +91,7 @@ if __name__=='__main__':
 
 	try:
 		args = parser.parse_args()
-	except IOError, msg:
+	except IOError as msg:
 		parser.error(str(msg))
 
 
@@ -100,14 +100,14 @@ if __name__=='__main__':
 	urlList = extractUrls(xmlData)
 	totalUrlCount = len(urlList)
 
-	print "There are {0} URLs to process".format(totalUrlCount)
+	print(f"There are {len(urlList)} URLs to process")
 
 	if (args.ruleFormat=="htaccess"):
 		processHtaccess(xmlData, args.outputFilename, args.destinationDomain)
 	elif (args.ruleFormat=="nginx"):
 		processNginx(xmlData, args.outputFilename, args.destinationDomain)
 	else:
-		print "The rule format is not supported currently. Please contact the developer."
+		print("The rule format is not supported currently. Please contact the developer.")
 
 	args.outputFilename.close()
 
